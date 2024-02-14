@@ -6,7 +6,6 @@ const mongoose = require('mongoose');
 require('dotenv').config()
 
 const app = express();
-// Подключение к MongoDB Atlas
 mongoose.connect(`mongodb+srv://apanasovm74:${process.env.MONGODB_PASSWORD}@cluster0.mxv9br9.mongodb.net`,
   { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
@@ -15,7 +14,6 @@ db.once('open', async () => {
   console.log('Успешное подключение к MongoDB Atlas');
   
   try {
-    // Выполняем запрос к Shopify GraphQL API
     const response = await axios.post(
       'https://cpb-new-developer.myshopify.com/admin/api/2023-10/graphql.json',
       {
@@ -53,8 +51,6 @@ db.once('open', async () => {
       bodyHtml: edge.node.bodyHtml,
       imageSrc: edge.node.images.edges[0].node.src,
     }));
-
-    // Проверка на уникальность и сохранение новых продуктов в базе данных
     for (const product of products) {
       const existingProduct = await Product.findOne({ id: product.id });
       if (!existingProduct) {
@@ -67,8 +63,6 @@ db.once('open', async () => {
     console.error('Ошибка получения данных о продуктах:', error);
   }
 });
-
-// Middleware для разрешения CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -79,7 +73,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// GraphQL схема
 const schema = buildSchema(`
   type Product {
     id: ID!
@@ -92,7 +85,6 @@ const schema = buildSchema(`
   }
 `);
 
-// Resolver функции
 const root = {
   products: async () => {
     try {
@@ -105,7 +97,6 @@ const root = {
   },
 };
 
-// Использование GraphQL API
 app.use('/graphql', graphqlHTTP({
   schema: schema,
   rootValue: root,
@@ -122,14 +113,12 @@ app.get('/products', async (req, res) => {
   }
 });
 
-// Модель продукта в MongoDB
 const Product = mongoose.model('Product', {
   id: String,
   bodyHtml: String,
   imageSrc: String,
 });
 
-// Запуск сервера
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
